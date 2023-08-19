@@ -1,8 +1,6 @@
 from django.http import Http404
 from django.shortcuts import get_list_or_404, get_object_or_404, render
 
-from utils.recipes.factory import make_recipe
-
 from .models import Recipe
 
 
@@ -16,27 +14,41 @@ def home(request):
 
 
 def category(request, category_id):
-    recipe = Recipe.objects.filter(
-        category__id=category_id, is_published=True
-    ).order_by("-id")
-
-    if not recipe:
-        raise Http404("Not Found 🥲")
+    recipes = get_list_or_404(
+        Recipe.objects.filter(category__id=category_id, is_published=True).order_by(
+            "-id"
+        )
+    )
 
     return render(
         request,
         "recipes/pages/category.html",
         context={
             "recipes": recipe,
-            "title": f"{recipe.first().category.name} - Category | ",
+            "title": f"{recipes[0].category.name} - Category | ",
         },
     )
 
 
 def recipe(request, id):
-    recipe = Recipe.objects.filter(recipe__id=id)
+    recipe = get_object_or_404(
+        Recipe,
+        pk=id,
+        is_published=True,
+    )
+
     return render(
         request,
         "recipes/pages/recipes-view.html",
-        context={"recipe": recipe},
+        context={"recipe": recipe, "is_detail_page": True},
     )
+
+def search(request):
+    search_term = request.GET.get('q', '').strip()
+    
+    if not search_term:
+        raise Http404()
+    return render(request, "recipes/pages/search.html",{
+        'page_title':f'Serach for "{search_term}" |',
+        'search_term': search_term,
+    })
