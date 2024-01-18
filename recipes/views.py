@@ -1,16 +1,26 @@
+import os
+
+from django.core.paginator import Paginator
+from django.db.models import Q
 from django.http import Http404
 from django.shortcuts import get_list_or_404, get_object_or_404, render
 
+from utils.pagitation import make_pagination
+
 from .models import Recipe
 
+PER_PAGE = os.environ.get('PER_PAGE', 3)
 
 def home(request):
-    recipe = Recipe.objects.filter(is_published=True).order_by("-id")
-    return render(
-        request,
-        "recipes/pages/home.html",
-        {"recipes": recipe},
-    )
+    recipes = Recipe.objects.filter(is_published=True).order_by("-id")
+    
+    page_obj, pagination_range = make_pagination(request, recipes, PER_PAGE)
+    
+    return render(request,"recipes/pages/home.html",
+        {"recipes": page_obj,
+         "pagination_range": pagination_range,
+         
+    })
 
 
 def category(request, category_id):
@@ -19,12 +29,11 @@ def category(request, category_id):
             "-id"
         )
     )
-
-    return render(
-        request,
-        "recipes/pages/category.html",
+    page_obj, pagination_range = make_pagination(request, recipes, PER_PAGE)
+    return render(request,"recipes/pages/category.html",
         context={
-            "recipes": recipe,
+            "recipes": page_obj,
+            "pagination_range": pagination_range,
             "title": f"{recipes[0].category.name} - Category | ",
         },
     )
@@ -48,7 +57,20 @@ def search(request):
     
     if not search_term:
         raise Http404()
+    
+    recipes = Recipe.objects.filter(
+        Q(
+            Q(title__icontains=search_term) | 
+            Q(description__icontains=search_term),
+            is_published=True
+        )
+    ).order_by('-id')
+    
+    page_obj, pagination_range = make_pagination(request, recipes, PER_PAGE)
     return render(request, "recipes/pages/search.html",{
         'page_title':f'Serach for "{search_term}" |',
         'search_term': search_term,
+        'recipes': page_obj,
+        'pagination_range':pagination_range,
+        'additional_url_query': f'&q={search_term}'
     })

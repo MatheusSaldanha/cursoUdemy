@@ -16,6 +16,10 @@
         <div class="main-content main-content-list container">
             {% block content %} {%endblock content%}
         </div>
+
+        {% include 'recipes/partials/pagination.html' %}
+
+
     </main>
     {% include 'recipes/partials/footer.html' %}
 
