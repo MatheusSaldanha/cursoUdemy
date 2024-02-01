@@ -6,7 +6,7 @@ from django.http import Http404
 from django.shortcuts import get_list_or_404, get_object_or_404, render
 
 from utils.pagitation import make_pagination
-
+from django.contrib import messages
 from .models import Recipe
 
 PER_PAGE = os.environ.get('PER_PAGE', 3)
